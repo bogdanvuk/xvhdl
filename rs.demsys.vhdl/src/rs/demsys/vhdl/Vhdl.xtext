@@ -1,0 +1,270 @@
+grammar rs.demsys.vhdl.Vhdl hidden(WS, COMMENT)
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+generate vhdl "http://www.demsys.rs/vhdl/Vhdl"
+
+DesignFile : 
+//	(ContextItems+=ContextItem)*
+	LibraryUnits+=LibraryUnit*
+	;
+UseClause
+  : //'use' importedNamespace+=VhdlName ( ',' importedNamespace+=VhdlName )* ';'
+  'use' (lib=[LibraryClause|ID] | 'work') '.' importedNamespace = QualifiedNameWithWildcard ';'
+  ;
+
+LibraryClause
+  : /* 'library' library_names+=IDENTIFIER (',' library_names+=IDENTIFIER)* ';' */
+  	'library' name=ID ';'
+  ;
+
+//ContextItem
+//  : LibraryClause
+//  | UseClause
+//  ;
+
+LibraryUnit
+  : PrimaryUnit
+  	| SecondaryUnit
+//  | primary_unit
+  ;
+  
+PrimaryUnit:
+	Entity
+	;
+	
+Entity
+  : "entity" name=ID "is" 
+  	//(port_clause=port_clause)?
+  	
+	"port" '(' 
+	  	interface_declaration+=SignalPort ( ',' interface_declaration+=SignalPort)* 
+	  	')' ';'
+  	
+  	//(generic_clause)?
+  	
+    //entity_declarative_part
+    //( BEGIN entity_statement_part )?
+    "end" ( "entity" )? /*( identifier )?*/ ';'
+  ;
+
+SignalPort
+  : ( "signal" )? name=ID ':' ( mode=Mode )? subtype_indication=SubtypeIndication
+    ( "bus" )? ( ':=' val=Expression )?
+  ;
+
+enum Mode
+  : IN="in"
+  | OUT="out"
+  | INPUT="inout"
+  | BUFFER="buffer"
+  | LINKAGE="linkage"
+  ;
+  
+enum BuiltinTypes returns EString:
+    STD_LOGIC="std_logic"
+    | STD_LOGIC_VECTOR="std_logic_vector"
+    | INTEGER="integer"	
+;
+
+
+SubtypeIndication
+  : (custom_type=[Type|QualifiedName]
+  	| builtin_type=BuiltinTypes)
+  	(constraint=constraint)?
+  ;
+ 
+Type:
+	(
+			('subtype' name=ID 'is' subtypeIndication=SubtypeIndication)
+		|	('type' name=ID )
+		
+	) ';'
+;
+
+constraint
+  : range_constraint
+  | index_constraint
+  ;
+
+
+enum Direction
+  : To='to'
+  | Downto='downto'
+  ;
+
+
+range
+  : from=Expression dir=Direction to=Expression
+  ;
+
+range_constraint
+  : 'range' range
+  ;
+  
+index_constraint
+  : '(' discrete_ranges+=discrete_range ( ',' discrete_ranges+=discrete_range )* ')'
+  ;
+
+discrete_range
+  : range
+  | SubtypeIndication
+  ;
+
+ 
+SecondaryUnit:
+	Architecture
+;
+
+Architecture
+  : 'architecture' name=ID 'of' entity=[Entity|ID] 'is'
+    	blockDeclarativeItems+=BlockDeclarativeItem*
+    'begin'
+    	architectureStatements+=ArchitectureStatement*
+    'end' ( 'architecture' )? ( post_name=ID )? ';'
+  ;
+  
+ArchitectureStatement
+  : process_statement
+    | concurrent_signal_assignment_statement
+  ;
+
+process_declarative_item:
+   Type
+  ;
+
+process_declarative_part
+  : ( process_declarative_item+=process_declarative_item )*
+  ;
+
+process_statement
+  : ( name=ID ':' )? ( "postponed" )? => "process"
+    //( LPAREN sensitivity_list RPAREN )? ( IS )?
+    process_declarative_part=process_declarative_part
+    "begin"
+    //process_statement_part
+    "end" ( "postponed" )? "process" /*( name=IDENTIFIER )?*/ ";"
+  ;
+
+concurrent_signal_assignment_statement
+  : ( name=ID ':')? ( "postponed" )?
+    ( conditional_signal_assignment=conditional_signal_assignment 
+    	//| selected_signal_assignment
+    )
+  ;
+  
+
+condition
+  : Expression
+  ;
+  
+/* 
+condition_clause
+  : UNTIL condition
+  ;
+*/
+
+conditional_signal_assignment
+  : target=[ExpressionVariable|QualifiedName] "<=" /*opts*/ waveform=waveform (conditional_waveforms=conditional_waveform_condition)? ";"
+  ;
+
+conditional_waveform_condition:
+	"when" 
+    	condition=condition
+    (else_part=conditional_waveform_alternative)?
+;
+
+conditional_waveform_alternative:
+	"else"
+		waveform=waveform
+	(when_part=conditional_waveform_condition)?
+;
+  
+waveform
+  :
+  	{waveform}
+  	(waveform_element+=waveform_element ( "," waveform_element+=waveform_element )*
+  | "unaffected")
+  ;
+
+
+waveform_element
+  : val=Expression ( "after" time=Expression )?
+  ;
+
+
+BlockDeclarativeItem  : 
+  	 Type
+    | Signal
+    | UseClause
+  ;
+  
+Signal
+  : 'signal' name=ID ':'
+    subtypeIndication=SubtypeIndication ( ':=' val=Expression )? ';'
+  ;
+
+
+
+/*
+Import:
+	'import' importedNamespace=ImportName;
+
+ImportName:
+	ID ('.' '*')?;
+
+Statement:
+	Definition | Evaluation;
+
+Definition:
+	'def' name=ID ('(' args+=DeclaredParameter (',' args+=DeclaredParameter)* ')')?
+	':' expr=Expression ';';
+
+DeclaredParameter:
+	name=ID;
+
+AbstractDefinition:
+	Definition | DeclaredParameter;
+
+Evaluation:
+	expression=Expression ';';
+*/
+
+ExpressionVariable:
+	Signal | SignalPort
+;
+
+Expression:
+	Addition;
+
+Addition returns Expression:
+	Multiplication (({Plus.left=current} '+' | {Minus.left=current} '-') right=Multiplication)*;
+
+Multiplication returns Expression:
+	PrimaryExpression (({Multi.left=current} '*' | {Div.left=current} '/') right=PrimaryExpression)*;
+
+PrimaryExpression returns Expression:
+	'(' Expression ')' |
+	{NumberLiteral} value=NUMBER |
+	{ExpressionVariable} value=[ExpressionVariable|QualifiedName]
+	//{FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?
+	;
+
+QualifiedNameWithWildcard:
+    QualifiedName '.all'?
+;
+
+QualifiedName:
+	ID ('.' ID)*
+; 
+
+
+terminal NUMBER returns ecore::EBigDecimal:
+	('0'..'9')* ('.' ('0'..'9')+)?;
+
+terminal COMMENT 	: '--' !('\n'|'\r')* ('\r'? '\n')?;
+
+terminal ID: 
+	('a'..'z' | 'A'..'Z') ( 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' )*
+  ;
+  
+terminal WS			: (' '|'\t'|'\r'|'\n')+;
