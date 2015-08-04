@@ -1,10 +1,10 @@
-grammar rs.demsys.vhdl.Vhdl hidden(WS, COMMENT)
+grammar rs.demsys.vhdl.Vhdl hidden(WS, COMMENT) 
 
 import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 generate vhdl "http://www.demsys.rs/vhdl/Vhdl"
 
 DesignFile : 
-//	(ContextItems+=ContextItem)*
+	(ContextItems+=ContextItem)*
 	LibraryUnits+=LibraryUnit*
 	;
 UseClause
@@ -17,10 +17,10 @@ LibraryClause
   	'library' name=ID ';'
   ;
 
-//ContextItem
-//  : LibraryClause
-//  | UseClause
-//  ;
+ContextItem
+  : LibraryClause
+  | UseClause
+  ;
 
 LibraryUnit
   : PrimaryUnit
@@ -37,14 +37,14 @@ Entity
   	//(port_clause=port_clause)?
   	
 	"port" '(' 
-	  	interface_declaration+=SignalPort ( ',' interface_declaration+=SignalPort)* 
+	  	interface_declaration+=SignalPort ( ';' interface_declaration+=SignalPort)* 
 	  	')' ';'
   	
   	//(generic_clause)?
   	
     //entity_declarative_part
     //( BEGIN entity_statement_part )?
-    "end" ( "entity" )? /*( identifier )?*/ ';'
+    "end" ( "entity" )? ID? ';'
   ;
 
 SignalPort
@@ -68,7 +68,7 @@ enum BuiltinTypes returns EString:
 
 
 SubtypeIndication
-  : (custom_type=[Type|QualifiedName]
+  : (custom_type=[Type]
   	| builtin_type=BuiltinTypes)
   	(constraint=constraint)?
   ;
@@ -94,7 +94,8 @@ enum Direction
 
 
 range
-  : from=Expression dir=Direction to=Expression
+  : //from=Expression dir=Direction to=Expression
+  	from=NUMBER dir=Direction to=NUMBER
   ;
 
 range_constraint
@@ -138,12 +139,55 @@ process_declarative_part
 
 process_statement
   : ( name=ID ':' )? ( "postponed" )? => "process"
-    //( LPAREN sensitivity_list RPAREN )? ( IS )?
+  	( '(' sensitivity+=[ExpressionVariable] (',' sensitivity+=[ExpressionVariable])* ')')?
     process_declarative_part=process_declarative_part
     "begin"
-    //process_statement_part
+    process_statement+=SequentialStatement*
     "end" ( "postponed" )? "process" /*( name=IDENTIFIER )?*/ ";"
   ;
+
+SequentialStatement:
+	IfStatement
+	| CaseStatement
+	| LoopStatement
+	| SignalAssignmentStatement
+;
+
+LoopStatement
+  : 'for' var=ID 'in' range=discrete_range
+    'loop'
+    statements+=SequentialStatement* 
+    'end' 'loop' ID? ';'
+  ;
+
+IfStatement:
+	"if" condition+=Expression "then"
+    statements+=SequentialStatement*
+    ( "elsif" condition+=Expression "then" statements+=SequentialStatement*)* 
+    ( "else" statements+=SequentialStatement*)?
+    "end" "if" ';'
+;
+
+CaseStatement: 
+	"case" exp=Expression "is"
+    alternative+=CaseStatementAlternative+
+    "end" "case" ';'
+  ;
+
+CaseStatementAlternative: 
+	"when" choice+=Choice ('|' choice +=Choice)* 
+	'=>' statements+=SequentialStatement*
+  ;
+
+Choice:
+	Expression
+//  | discrete_range
+    | "others"
+  ;
+
+SignalAssignmentStatement:
+	target=Target "<=" waveform=waveform ';'
+;
 
 concurrent_signal_assignment_statement
   : ( name=ID ':')? ( "postponed" )?
@@ -164,7 +208,7 @@ condition_clause
 */
 
 conditional_signal_assignment
-  : target=[ExpressionVariable|QualifiedName] "<=" /*opts*/ waveform=waveform (conditional_waveforms=conditional_waveform_condition)? ";"
+  : target=[ExpressionVariable] "<=" /*opts*/ waveform=waveform (conditional_waveforms=conditional_waveform_condition)? ";"
   ;
 
 conditional_waveform_condition:
@@ -233,8 +277,26 @@ ExpressionVariable:
 	Signal | SignalPort
 ;
 
+Target:
+	name=[ExpressionVariable] ('(' slice=Expression ')')?
+;
+
 Expression:
-	Addition;
+	LogicalOperation;
+
+LogicalOperation returns Expression:
+	Addition (
+		(
+			  {And.left=current} 'and' 
+			| {Or.left=current} 'or'
+			| {Nand.left=current} 'nand'
+			| {Nor.left=current} 'nor'
+			| {Xor.left=current} 'xor'
+			| {Xnor.left=current} 'xnor'
+		) 
+		right=Addition
+	)*
+;
 
 Addition returns Expression:
 	Multiplication (({Plus.left=current} '+' | {Minus.left=current} '-') right=Multiplication)*;
@@ -244,11 +306,15 @@ Multiplication returns Expression:
 
 PrimaryExpression returns Expression:
 	'(' Expression ')' |
-	{NumberLiteral} value=NUMBER |
-	{ExpressionVariable} value=[ExpressionVariable|QualifiedName]
+	{Literal} value=NUMBER |
+	{StringLiteral} value=STRING_LITERAL |
+	{CharacterLiteral} value=CHARACTER_LITERAL |
+	{All} value='all' |
+	{ExpressionVariable} value=[ExpressionVariable]
+//	{Slicing} sig=[ExpressionVariable] ('(' slice=Expression ')')?
 	//{FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?
 	;
-
+	
 QualifiedNameWithWildcard:
     QualifiedName '.all'?
 ;
@@ -257,6 +323,13 @@ QualifiedName:
 	ID ('.' ID)*
 ; 
 
+terminal STRING_LITERAL
+  : '"' (!('"'|'\n'|'\r') | '""')* '"'
+  ;
+  
+terminal CHARACTER_LITERAL : 
+	'\'' . '\''
+   ;
 
 terminal NUMBER returns ecore::EBigDecimal:
 	('0'..'9')* ('.' ('0'..'9')+)?;

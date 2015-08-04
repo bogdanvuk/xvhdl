@@ -2,16 +2,19 @@
 <ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="vhdl" nsURI="http://www.demsys.rs/vhdl/Vhdl" nsPrefix="vhdl">
   <eClassifiers xsi:type="ecore:EClass" name="DesignFile">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="ContextItems" upperBound="-1"
+        eType="#//ContextItem" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="LibraryUnits" upperBound="-1"
         eType="#//LibraryUnit" containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="UseClause" eSuperTypes="#//BlockDeclarativeItem">
+  <eClassifiers xsi:type="ecore:EClass" name="UseClause" eSuperTypes="#//ContextItem #//BlockDeclarativeItem">
     <eStructuralFeatures xsi:type="ecore:EReference" name="lib" eType="#//LibraryClause"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="importedNamespace" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="LibraryClause">
+  <eClassifiers xsi:type="ecore:EClass" name="LibraryClause" eSuperTypes="#//ContextItem">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ContextItem"/>
   <eClassifiers xsi:type="ecore:EClass" name="LibraryUnit"/>
   <eClassifiers xsi:type="ecore:EClass" name="PrimaryUnit" eSuperTypes="#//LibraryUnit"/>
   <eClassifiers xsi:type="ecore:EClass" name="Entity" eSuperTypes="#//PrimaryUnit">
@@ -53,11 +56,9 @@
     <eLiterals name="Downto" value="1" literal="downto"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="range" eSuperTypes="#//range_constraint #//discrete_range">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="from" eType="#//Expression"
-        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="from" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBigDecimal"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="dir" eType="#//Direction"/>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="to" eType="#//Expression"
-        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="to" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBigDecimal"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="range_constraint" eSuperTypes="#//constraint"/>
   <eClassifiers xsi:type="ecore:EClass" name="index_constraint" eSuperTypes="#//constraint">
@@ -84,8 +85,45 @@
         upperBound="-1" eType="#//process_declarative_item" containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="process_statement" eSuperTypes="#//ArchitectureStatement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="sensitivity" unique="false"
+        upperBound="-1" eType="#//ExpressionVariable"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="process_declarative_part"
         eType="#//process_declarative_part" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="process_statement" upperBound="-1"
+        eType="#//SequentialStatement" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="SequentialStatement"/>
+  <eClassifiers xsi:type="ecore:EClass" name="LoopStatement" eSuperTypes="#//SequentialStatement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="var" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="range" eType="#//discrete_range"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="statements" upperBound="-1"
+        eType="#//SequentialStatement" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="IfStatement" eSuperTypes="#//SequentialStatement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="condition" upperBound="-1"
+        eType="#//Expression" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="statements" upperBound="-1"
+        eType="#//SequentialStatement" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="CaseStatement" eSuperTypes="#//SequentialStatement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="exp" eType="#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="alternative" upperBound="-1"
+        eType="#//CaseStatementAlternative" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="CaseStatementAlternative">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="choice" upperBound="-1"
+        eType="#//Choice" containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="statements" upperBound="-1"
+        eType="#//SequentialStatement" containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Choice"/>
+  <eClassifiers xsi:type="ecore:EClass" name="SignalAssignmentStatement" eSuperTypes="#//SequentialStatement">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="#//Target"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="waveform" eType="#//waveform"
+        containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="concurrent_signal_assignment_statement"
       eSuperTypes="#//ArchitectureStatement">
@@ -133,7 +171,48 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="val" eType="#//Expression"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="Expression" eSuperTypes="#//condition"/>
+  <eClassifiers xsi:type="ecore:EClass" name="Target">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="name" eType="#//ExpressionVariable"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="slice" eType="#//Expression"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Expression" eSuperTypes="#//Choice #//condition"/>
+  <eClassifiers xsi:type="ecore:EClass" name="And" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="left" eType="#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="right" eType="#//Expression"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Or" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="left" eType="#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="right" eType="#//Expression"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Nand" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="left" eType="#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="right" eType="#//Expression"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Nor" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="left" eType="#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="right" eType="#//Expression"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Xor" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="left" eType="#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="right" eType="#//Expression"
+        containment="true"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="Xnor" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="left" eType="#//Expression"
+        containment="true"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="right" eType="#//Expression"
+        containment="true"/>
+  </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Plus" eSuperTypes="#//Expression">
     <eStructuralFeatures xsi:type="ecore:EReference" name="left" eType="#//Expression"
         containment="true"/>
@@ -158,7 +237,16 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="right" eType="#//Expression"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="NumberLiteral" eSuperTypes="#//Expression">
+  <eClassifiers xsi:type="ecore:EClass" name="Literal" eSuperTypes="#//Expression">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBigDecimal"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="StringLiteral" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="CharacterLiteral" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="All" eSuperTypes="#//Expression">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="value" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
 </ecore:EPackage>
