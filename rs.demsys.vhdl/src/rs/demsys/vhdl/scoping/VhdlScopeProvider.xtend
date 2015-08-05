@@ -6,12 +6,12 @@ package rs.demsys.vhdl.scoping
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
-import rs.demsys.vhdl.vhdl.Architecture
-import java.util.ArrayList
-import rs.demsys.vhdl.vhdl.SignalPort
-import org.eclipse.xtext.scoping.Scopes
-import rs.demsys.vhdl.vhdl.Signal
-import rs.demsys.vhdl.vhdl.LoopStatement
+//import rs.demsys.vhdl.vhdl.Architecture
+//import java.util.ArrayList
+//import rs.demsys.vhdl.vhdl.SignalPort
+//import org.eclipse.xtext.scoping.Scopes
+//import rs.demsys.vhdl.vhdl.Signal
+//import rs.demsys.vhdl.vhdl.LoopStatement
 
 /**
  * This class contains custom scoping description.
@@ -23,52 +23,52 @@ import rs.demsys.vhdl.vhdl.LoopStatement
 class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider {
 
 	//def scope_ExpressionVariable(EObject context, EReference r)
-	def scope_ExpressionVariable(Architecture arch, EReference r)
-    {
-    	//val arch = EcoreUtil2.getContainerOfType(context, typeof(Architecture))
-    	
-        //DesignFile d = EcoreUtil2.getContainerOfType(context, DesignFile.class);
-        
-        val objScope = new ArrayList<EObject>();
-        
-        objScope.addAll(arch.entity.interface_declaration.filter(typeof(SignalPort)))
-        objScope.addAll(arch.blockDeclarativeItems.filter(typeof(Signal)))
-        
-        return Scopes.scopeFor(objScope);
-        
-//        return Scopes.scopeFor(objScope, delegateGetScope(arch, r));
-        //return Scopes.scopeFor(objScope);
-        /*
-        ArrayList<EObject> objScope = new ArrayList<EObject>();
-        
-        for (DesignPackage designPackage : ((DesignFile) context.eContainer()).getPackages()) {
-            objScope.addAll(designPackage.getDesignTypes());
-        }
-        
-        IScope outerAttrs = Scopes.scopeFor(objScope);
-        //IScope outerAttrs = getOuterAttrScope(context.getSuper());
-        
-        //return outerAttrs;
-        
-        return MultimapBasedScope.createScope(outerAttrs, delegateGetScope(context, r).getAllElements(), false);
-        */
-    }
-    
-    def scope_ExpressionVariable(LoopStatement loop, EReference r)
-    {
-    	val objScope = new ArrayList<EObject>();
-       
-        objScope.addAll(loop.getVar())
-        
-    	Scopes::scopeFor(
-    		objScope,
-    		this.getScope(loop.eContainer, r)
-    	
-    		)
-//    	val objScope = new ArrayList<EObject>();
+//	def scope_ExpressionVariable(Architecture arch, EReference r)
+//    {
+//    	//val arch = EcoreUtil2.getContainerOfType(context, typeof(Architecture))
+//    	
+//        //DesignFile d = EcoreUtil2.getContainerOfType(context, DesignFile.class);
 //        
+//        val objScope = new ArrayList<EObject>();
+//        
+//        objScope.addAll(arch.entity.interface_declaration.filter(typeof(SignalPort)))
+//        objScope.addAll(arch.blockDeclarativeItems.filter(typeof(Signal)))
+//        
+//        return Scopes.scopeFor(objScope);
+//        
+////        return Scopes.scopeFor(objScope, delegateGetScope(arch, r));
+//        //return Scopes.scopeFor(objScope);
+//        /*
+//        ArrayList<EObject> objScope = new ArrayList<EObject>();
+//        
+//        for (DesignPackage designPackage : ((DesignFile) context.eContainer()).getPackages()) {
+//            objScope.addAll(designPackage.getDesignTypes());
+//        }
+//        
+//        IScope outerAttrs = Scopes.scopeFor(objScope);
+//        //IScope outerAttrs = getOuterAttrScope(context.getSuper());
+//        
+//        //return outerAttrs;
+//        
+//        return MultimapBasedScope.createScope(outerAttrs, delegateGetScope(context, r).getAllElements(), false);
+//        */
+//    }
+//    
+//    def scope_ExpressionVariable(LoopStatement loop, EReference r)
+//    {
+//    	val objScope = new ArrayList<EObject>();
+//       
 //        objScope.addAll(loop.getVar())
 //        
-//        return Scopes.scopeFor(objScope, delegateGetScope(loop, r));
-    }
+//    	Scopes::scopeFor(
+//    		objScope,
+//    		this.getScope(loop.eContainer, r)
+//    	
+//    		)
+////    	val objScope = new ArrayList<EObject>();
+////        
+////        objScope.addAll(loop.getVar())
+////        
+////        return Scopes.scopeFor(objScope, delegateGetScope(loop, r));
+//    }
 }
