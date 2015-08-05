@@ -3,9 +3,20 @@
  */
 package rs.demsys.vhdl;
 
+import rs.demsys.vhdl.scoping.VhdlImportedNamespaceAwareLocalScopeProvider;
+
+import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
+
 /**
  * Use this class to register components to be used at runtime / without the Equinox extension registry.
  */
 public class VhdlRuntimeModule extends rs.demsys.vhdl.AbstractVhdlRuntimeModule {
-
+//	@Override
+//    public void configureIScopeProviderDelegate(com.google.inject.Binder binder) {
+//        binder.bind(org.eclipse.xtext.scoping.IScopeProvider.class)
+//                .annotatedWith(
+//                        com.google.inject.name.Names
+//                                .named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+//                .to(VhdlImportedNamespaceAwareLocalScopeProvider.class);
+//    }
 }

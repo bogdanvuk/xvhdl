@@ -9,13 +9,22 @@ DesignFile :
 	;
 UseClause
   : //'use' importedNamespace+=VhdlName ( ',' importedNamespace+=VhdlName )* ';'
-  'use' (lib=[LibraryClause|ID] | 'work') '.' importedNamespace = QualifiedNameWithWildcard ';'
+  'use' (lib=[Library]) '.' importedNamespace = QualifiedNameWithWildcard ';'
   ;
+
+Library:
+	custom_lib=LibraryClause
+	| builtin_lib=BuiltinLibs
+;
 
 LibraryClause
   : /* 'library' library_names+=IDENTIFIER (',' library_names+=IDENTIFIER)* ';' */
   	'library' name=ID ';'
   ;
+  
+enum BuiltinLibs:
+	WORK='work'
+;
 
 ContextItem
   : LibraryClause
@@ -63,7 +72,9 @@ enum Mode
 enum BuiltinTypes returns EString:
     STD_LOGIC="std_logic"
     | STD_LOGIC_VECTOR="std_logic_vector"
-    | INTEGER="integer"	
+    | INTEGER="integer"
+    | NATURAL="natural"
+    | UNSIGNED="unsigned"
 ;
 
 
@@ -127,7 +138,27 @@ Architecture
 ArchitectureStatement
   : process_statement
     | concurrent_signal_assignment_statement
+    | ComponentInstantiation
   ;
+  
+ComponentInstantiation:
+	name=ID ':' unit=InstantiatedUnit
+	(port_map = PortMap)?
+;
+
+PortMap:
+	'port' 'map' '('
+		association+=PortMapAssociation (',' association+=PortMapAssociation)*
+	')'
+;
+
+PortMapAssociation:
+	formal=[SignalPort] '<=' actual=[SignalPort]
+;
+
+InstantiatedUnit:
+	'entity' name=QualifiedName ('(' arch=ID ')')?
+;
 
 process_declarative_item:
    Type
@@ -139,7 +170,7 @@ process_declarative_part
 
 process_statement
   : ( name=ID ':' )? ( "postponed" )? => "process"
-  	( '(' sensitivity+=[ExpressionVariable] (',' sensitivity+=[ExpressionVariable])* ')')?
+  	( '(' sensitivity+=Target (',' sensitivity+=Target)* ')')?
     process_declarative_part=process_declarative_part
     "begin"
     process_statement+=SequentialStatement*
@@ -153,8 +184,12 @@ SequentialStatement:
 	| SignalAssignmentStatement
 ;
 
+LoopVariable:
+	name=ID
+;
+
 LoopStatement
-  : 'for' var=ID 'in' range=discrete_range
+  : 'for' var=LoopVariable 'in' range=discrete_range
     'loop'
     statements+=SequentialStatement* 
     'end' 'loop' ID? ';'
@@ -208,7 +243,7 @@ condition_clause
 */
 
 conditional_signal_assignment
-  : target=[ExpressionVariable] "<=" /*opts*/ waveform=waveform (conditional_waveforms=conditional_waveform_condition)? ";"
+  : target=Target "<=" /*opts*/ waveform=waveform (conditional_waveforms=conditional_waveform_condition)? ";"
   ;
 
 conditional_waveform_condition:
@@ -240,12 +275,18 @@ BlockDeclarativeItem  :
   	 Type
     | Signal
     | UseClause
+    | Constant
   ;
   
 Signal
   : 'signal' name=ID ':'
     subtypeIndication=SubtypeIndication ( ':=' val=Expression )? ';'
   ;
+  
+Constant:
+  'constant' name=ID ':'
+    subtypeIndication=SubtypeIndication ':=' val=Expression ';'
+;
 
 
 
@@ -274,15 +315,41 @@ Evaluation:
 */
 
 ExpressionVariable:
-	Signal | SignalPort
+	Signal | SignalPort | LoopVariable | Constant
 ;
 
 Target:
-	name=[ExpressionVariable] ('(' slice=Expression ')')?
+	name=[ExpressionVariable] (slice=TargetSlice | attribute=TargetAttribute) ?
+;
+
+TargetSlice:
+	'(' slice=Expression ')'
+;
+
+TargetAttribute hidden():
+	APOSTROPHE property=ID
+;
+
+APOSTROPHE hidden(WS, COMMENT):
+	APOSTROPHE_CHAR
 ;
 
 Expression:
-	LogicalOperation;
+	Comparison;
+
+Comparison returns Expression:
+	LogicalOperation (
+		(
+			  {Equal.left=current} '=' 
+			| {Greater.left=current} '>'
+			| {Less.left=current} '<'
+			| {GreaterEq.left=current} '>='
+			| {LessEq.left=current} '<='
+			| {Inequal.left=current} '/='
+		) 
+		right=LogicalOperation
+	)*
+;
 
 LogicalOperation returns Expression:
 	Addition (
@@ -310,7 +377,7 @@ PrimaryExpression returns Expression:
 	{StringLiteral} value=STRING_LITERAL |
 	{CharacterLiteral} value=CHARACTER_LITERAL |
 	{All} value='all' |
-	{ExpressionVariable} value=[ExpressionVariable]
+	{ExpressionVariable} value=Target
 //	{Slicing} sig=[ExpressionVariable] ('(' slice=Expression ')')?
 	//{FunctionCall} func=[AbstractDefinition] ('(' args+=Expression (',' args+=Expression)* ')')?
 	;
@@ -324,15 +391,23 @@ QualifiedName:
 ; 
 
 terminal STRING_LITERAL
-  : '"' (!('"'|'\n'|'\r') | '""')* '"'
+  : ('x'|'b'|'o') '"' (!('"'|'\n'|'\r') | '""')* '"'
   ;
   
-terminal CHARACTER_LITERAL : 
-	'\'' . '\''
+CHARACTER_LITERAL hidden(): 
+	APOSTROPHE_CHAR DIGIT APOSTROPHE_CHAR
    ;
 
-terminal NUMBER returns ecore::EBigDecimal:
-	('0'..'9')* ('.' ('0'..'9')+)?;
+NUMBER returns ecore::EBigDecimal:
+	DIGIT* ('.' DIGIT+)?;
+
+terminal APOSTROPHE_CHAR:
+	"'"
+;
+
+terminal DIGIT:
+	('0'..'9')
+; 
 
 terminal COMMENT 	: '--' !('\n'|'\r')* ('\r'? '\n')?;
 
