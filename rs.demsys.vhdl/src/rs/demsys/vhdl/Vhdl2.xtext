@@ -555,13 +555,9 @@ FileTypeDefinition:
     'file' 'of' type = ID
 ;
 
-RecordField:
-	name=ID
-;
-
 RecordTypeDefinition:
     'record' 
-       ( field += RecordField (',' field+=RecordField)* ':' type += SubtypeIndication ';' )+
+       ( field += ID (',' field+=ID)* ':' type += SubtypeIndication ';' )+
     'end' 'record' ( Identifier )?
 ;
 
@@ -644,20 +640,13 @@ AttributeExpression returns Expression:
 ;
 
 MemberExpression returns Expression: 
-    SliceExpression ({MemberExpression.left=current} '.' right = Member)*
-;
-
-Member returns Expression:
-	{Member}
-	member=[RecordField]
-	(('(' slice+=Expression (',' slice+=Expression)* ')')+)?
+    SliceExpression ({MemberExpression.left=current} '.' right = SliceExpression)*
 ;
 
 SliceExpression returns Expression:
 	AtomicExpression
 	({SliceExpression.left=current} ('(' slice+=Expression (',' slice+=Expression)* ')')+)?
 ;
-
 AtomicExpression returns Expression:
 	{Variable} value=[Variable] |
 	{Value} value=ValueExpression |
@@ -683,7 +672,7 @@ Variable:
 ;
 
 IdList:
-	id+=MemberExpression (',' id+=MemberExpression)*
+	id+=[Variable] (',' id+=[Variable])*
 ;
 
 //Aggregate:
