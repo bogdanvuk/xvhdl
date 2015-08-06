@@ -27,4 +27,5 @@ Export-Package: rs.demsys.vhdl,
  rs.demsys.vhdl.validation,
  rs.demsys.vhdl.scoping,
  rs.demsys.vhdl.generator,
- rs.demsys.vhdl.formatting
+ rs.demsys.vhdl.formatting,
+ rs.demsys.vhdl.parser.antlr.lexer

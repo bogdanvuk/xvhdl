@@ -36,35 +36,7 @@ ContextItem
 LibraryUnit:
 	Entity
 	| Architecture
-	| Package
 ;
-
-
-Package
-  : "package" name=	QualifiedName "is"
-    //package_declarative_part=package_declarative_part
-    (package_declarative_item+=package_declarative_item )*
-    "end" ( "package" )? ID? ";"
-  ;
-
-package_declarative_item
-  : 
-	SignalDeclaration
-//    SubprogramDeclaration
-  | Type
-//  | SubtypeDeclaration
-  | ConstantDeclaration
-//  | SignalDeclaration
-  | VariableDeclaration
-//  | FileDeclaration
-//  | AliasDeclaration
-  | Component
-  ;
-
-package_declarative_part
-  : ( package_declarative_item+=package_declarative_item )*
-  ;
-
 
 /*
  * architecture identifier of entity_name is
@@ -74,7 +46,7 @@ package_declarative_part
  * end architecture identifier ;  
  */
 Architecture returns Architecture:
-  'architecture' name = ID 'of' entity=[Entity] 'is'
+  'architecture' name = IdentifierName 'of' entity=[Entity] 'is'
     ( declaration += BlockDeclarativeItem )*
   'begin'
     ( statement += ArchitectureStatement )*
@@ -83,8 +55,8 @@ Architecture returns Architecture:
 
 Entity: 
   'entity' name = ID 'is' 
-      ( generics = Generics )?
-      ( ports = Ports )?
+//      ( generic = Generics )?
+      ( port = Ports )?
 //      ( declaration += EntityDeclarativeItem )*
     ( 'begin' 
 //      ( statement += EntityStatement )*
@@ -93,24 +65,18 @@ Entity:
 ;
 
 Ports: 
-  'port' '(' declaration += Port ( ';' declaration += Port)* ')' ';'
+  'port' '(' declaration += PortDeclaration ( ';' declaration += PortDeclaration )* ')' ';'
 ;
 
-Port:
+PortDeclaration: 
+    InterfaceSignalDeclaration
+;
+
+InterfaceSignalDeclaration:
   ('signal')? name = ID ':' ( mode = Mode )?
   type = SubtypeIndication ( kind = SignalKind )?  
   ( ':=' initial = Expression )?
 ;
-
-Generics: 
-  'generic' '(' declaration += Generic ( ';' declaration += Generic)* ')' ';'
-;
-
-Generic:
-   ( 'constant' )?  name = ID ':' ( 'in' )?
-   type = SubtypeIndication  ( ':=' initial = Expression )?
-;
-
 
 //InterfaceVariableDeclaration:
 //  ( 'variable' )? name = ID ':' ( mode = Mode )?
@@ -125,16 +91,16 @@ Generic:
 BlockDeclarativeItem:
 	SignalDeclaration
 //    SubprogramDeclaration
-  | Type
+//  | TypeDeclaration
 //  | SubtypeDeclaration
   | ConstantDeclaration
 //  | SignalDeclaration
   | VariableDeclaration
 //  | FileDeclaration
-  | Alias
+//  | AliasDeclaration
   | Component
-  | AttributeDeclaration
-  | AttributeSpecification
+//  | AttributeDeclaration
+//  | AttributeSpecification
 //  | ConfigurationSpecification
 //  | DisconnectionSpecification
 //  | LimitDeclaration
@@ -147,11 +113,6 @@ BlockDeclarativeItem:
 //  | TerminalDeclaration
 ;
 
-Alias:
-  'alias' name = ID ( ':' alias = SubtypeIndication )? 'is'
-    is = SliceExpression ';'
-;
-
 SignalDeclaration:
   'signal' sig+=Signal (',' sig+=Signal)* ':'
   type = SubtypeIndication ( kind = SignalKind )?  ( ':=' initial = Expression )? ';'
@@ -162,38 +123,13 @@ Signal:
 ;
 
 VariableDeclaration:
-  ( ( shared ?= 'shared' ) )? 'variable' var+=Var (',' var+=Var)* 
+  ( ( shared ?= 'shared' ) )? 'variable' name = MultiIdentifierName 
     ':' type = SubtypeIndication ( ':=' initial = Expression )? ';'
 ;
 
-Var:
-	name=ID
-;
-
 ConstantDeclaration:
-  'constant' constant+=Constant (',' constant+=Constant)* ':' type = SubtypeIndication
+  'constant' name = MultiIdentifierName ':' type = SubtypeIndication
     ( ':=' initial = Expression )? ';'
-;
-
-Constant:
-	name=ID
-;
-
-
-/*
- * attribute identifier : type_mark ;
- */
-AttributeDeclaration:
-  'attribute' name = ID ':'  (type_id = ID | type_keyword = BuiltinTypes) ';'
-;
-
-/*
- * attribute_specification = "attribute" attribute_designator "of" entity_specification "is" expression ";"
- *  entity_specification = entity_name_list ":" entity_class
- */
-AttributeSpecification :
-  'attribute' name = ID 'of' entity=ID ':' class = EntityClass 'is' is=Expression ';' 
-  //entity = [Entity] ':' class = EntityClass 'is' is = Expression ';'
 ;
 
 /*
@@ -203,8 +139,8 @@ AttributeSpecification :
  * end component component_name ;
  */
 Component returns Component:
-  'component' name = ID ( 'is' )?
-    ( generic = Generics )?
+  'component' name = IdentifierName ( 'is' )?
+//    ( generic = Generics )?
     ( port = Ports )?
   'end' 'component' ( Identifier )? ';'
 ;
@@ -237,7 +173,7 @@ ArchitectureStatement:
 ProcessStatement:
     ( label = ID ':' )? ( postponed ?= 'postponed' )? 
     'process'
-      ( '(' sensitivity = IdList ')' )? 
+      ( '(' sensitivity = MultiIdentifierName ')' )? 
       ( 'is' )?
 //      ( declaration += ProcessDeclarativeItem )*
     'begin'
@@ -255,7 +191,7 @@ ProcessStatement:
  */
 ComponentInstantiationStatement:
   label = ID ':' ( 'component' )? name = ID 
-  ( genericMap = GenericMap )? 
+  //( genericMap = GenericMaps )? 
   ( portMap = PortMap )? ';'
 ;
 
@@ -273,20 +209,8 @@ PortMap:
 ;
 
 PortMapAssociation:
-	formal=ID '=>' actual=Expression
+	formal=ID '=>' (actual=Expression | 'open')
 ;
-
-
-GenericMap:
-	'generic' 'map' '('
-		association+=GenericMapAssociation (',' association+=GenericMapAssociation)*
-	')'
-;
-
-GenericMapAssociation:
-	formal=ID '=>' actual=Expression
-;
-
 
 /*
  * [ label : ] [ postponed ] conditional_signal_assignment_statement ;
@@ -296,37 +220,37 @@ GenericMapAssociation:
  */
 ConditionalSignalAssignmentStatement:
   ( label = ID ':' )? ( postponed ?= 'postponed' )?
-   target = SliceExpression '<=' ( guarded ?= 'guarded' )? //( delay = DelayMechanism )? 
+   target = Name '<=' ( guarded ?= 'guarded' )? //( delay = DelayMechanism )? 
    waveform += ConditionalWaveform (=> 'else' waveform += ConditionalWaveform)* ';'
 ;
 
 ConditionalWaveform returns Expression:
-  Waveforms ({ConditionalWaveformExpression.expression=current} 'when' choice = Expression)?
+  Waveforms ({ConditionalWaveformExpression.expression=current} 'when' choice = Choices)?
 ;
-//
-//Waveforms returns Expression:
-//  Waveform ( {MultiExpression.expression+=current} (',' expression += Waveform )+ )?
-//;
+
+Choices returns Expression:
+    Choice ({MultiExpression.expression += current} ('|' expression += Choice)+)?
+;
+
+Choice returns Expression: 
+	Others
+	| Expression ({RangeExpression.left=current} direction = RangeDirection right = SimpleExpression)?
+    
+//  | Expression ({RangeExpression.left=current} direction = RangeDirection right = SimpleExpression)?
+//  | SubtypeIndicationExpression
+;
 
 Waveforms returns Expression:
-  waveform+=Waveform (',' waveform += Waveform )*
+    => Unaffected 
+  | Waveform ( {MultiExpression.expression+=current} (',' expression += Waveform )+ )?
 ;
-
-
-/*
- * value_expression [ after time_expression ]
- */
-Waveform returns Expression: 
-  exp=Expression ('after' after = Expression )?
-;
-
 
 SequentialStatement:
     WaitStatement
 //  | AssertionStatement
 //  | ReportStatement
   | IfStatement
-  | CaseStatement
+//  | CaseStatement
   | LoopStatement
 //  | NextStatement
 //  | ExitStatement
@@ -339,7 +263,7 @@ SequentialStatement:
 ;
 
 WaitStatement:
-    ( label = Identifier ':' )? 'wait' ( 'on' sensitivity = IdList )? 
+    ( label = Identifier ':' )? 'wait' ( 'on' sensitivity = MultiName )? 
     ( 'until' until = Expression )? ( 'for' time = Expression )? ';'
 ;
 
@@ -368,28 +292,6 @@ IfStatementTest:
 ;
 
 /*
- * [ label: ] case  expression  is
- *              when choice1 =>
- *                 sequence-of-statements
- *              when choice2 =>            \_ optional
- *                 sequence-of-statements  /
- *              ...
- *
- *              when others =>             \_ optional if all choices covered
- *                 sequence-of-statements  /
- *            end case [ label ] ;
- */
-CaseStatement:
-  ( label = ID ':' )? 'case' case = Expression 'is'
-      ( when += CaseAlternative )+
-    'end' 'case' (ID)? ';'
-;
-
-CaseAlternative:
-  'when' choice = ChoiceExpression (=> '=>') (statement += SequentialStatement )*
-;
-
-/*
  * [ label: ] loop
  *                  sequence-of-statements -- use exit statement to get out
  *             end loop [ label ] ;
@@ -402,24 +304,12 @@ CaseAlternative:
  *                  sequence-of-statements
  *             end loop [ label ] ;
  */
-//LoopStatement:
-//    ( label = Identifier ':' )? ( iteration = IterationScheme )?
-//    'loop'
-//    ( statement += SequentialStatement )* 
-//    'end' 'loop' ( Identifier )? ';'
-//  ;
-
-LoopVariable:
-	name=ID
-;
-
-LoopStatement
-  : 'for' var=LoopVariable 'in' range=Expression
+LoopStatement:
+    ( label = Identifier ':' )? ( iteration = IterationScheme )?
     'loop'
-    statements+=SequentialStatement* 
-    'end' 'loop' ID? ';'
+    ( statement += SequentialStatement )* 
+    'end' 'loop' ( Identifier )? ';'
   ;
-
   
 /*
  * sequential signal assignment statement
@@ -428,7 +318,7 @@ LoopStatement
  */
 SequentialSignalAssignmentStatement :
   ( label = ID ':' )? ( postponed ?= 'postponed' )?
-  target = SliceExpression '<=' ( guarded ?= 'guarded' )?// ( delay = DelayMechanism )? 
+  target = Name '<=' ( guarded ?= 'guarded' )?// ( delay = DelayMechanism )? 
    waveform = Waveforms 
    ';'
 ;
@@ -465,7 +355,7 @@ DiscreteRange returns Expression:
 //;
 
 SubtypeIndication
-  : (custom_type=[Type|QualifiedName]
+  : (custom_type=[Type]
   	| builtin_type=BuiltinTypes)
   	
   	(constraint=Constraint)?
@@ -485,7 +375,6 @@ enum BuiltinTypes returns EString:
     | INTEGER="integer"
     | NATURAL="natural"
     | UNSIGNED="unsigned"
-    | STRING = "string"
 ;
 
 Constraint returns Expression:
@@ -494,11 +383,11 @@ Constraint returns Expression:
 ;
 
 RangeConstraint returns Expression:
-  'range' RangeExpression
+  'range' Range
 ;
 
 IndexConstraint returns Expression:
-   '(' RangeExpression ({MultiExpression.expression+=current} (',' expression += RangeExpression )+ )? ')'
+   '(' DiscreteRange ({MultiExpression.expression+=current} (',' expression += DiscreteRange )+ )? ')'
 ;
 
 Expression:
@@ -510,15 +399,7 @@ LogicalExpression returns Expression:
 ;
 
 Relation returns Expression:
-  ChoiceExpression ({RelationalExpression.left=current} operator = RelationalOperator right = ChoiceExpression)?
-;
-
-ChoiceExpression returns Expression:
-	RangeExpression ({ChoiceExpression.left=current} '|' right = RangeExpression)?
-;
-
-RangeExpression returns Expression:
-	ShiftExpression ({RangeExpression.left=current} operator = RangeDirection right = ShiftExpression)?
+  ShiftExpression ({RelationalExpression.left=current} operator = RelationalOperator right = ShiftExpression)?
 ;
 
 ShiftExpression returns Expression: 
@@ -538,68 +419,184 @@ TermExpression returns Expression:
 ;
 
 Factor returns Expression: 
-    SliceExpression ({Factor.left=current} '**' right = SliceExpression) ?
+    Primary ({Factor.left=current} '**' right = Primary) ?
   | UnaryExpression
 ;
 
 UnaryExpression returns Expression:
-  unary_operator = UnaryOperator expression = SliceExpression
+  unary_operator = UnaryOperator expression = Primary
 ;
 
-SliceExpression returns Expression:
-	AttributeExpression
-	('(' slice+=Expression (',' slice+=Expression)* ')')?
-;
-//
-//RangeExpression returns Expression:
-//	AttributeExpression ({Range.left=current} direction = RangeDirection right=AttributeExpression)*
+//SignFactor returns Expression: 
+//    SignPrimary ({PowerExpression.left=current} '**' right = Primary) ?
+//  | SignUnaryExpression
 //;
-
-AttributeExpression returns Expression:
-	AtomicExpression
-	(attribute+=ATTRIBUTE)?
-;
-
-AtomicExpression returns Expression:
-	{Variable} value=[Variable] |
-	{Value} value=ValueExpression |
-	{Type} value=BuiltinTypes |
-	{BuiltinFuncs} value=BuiltinFuncs |
-	{Boolean} value = ('true' | 'false') |
-	{String} value=STRING |
-	{Char} value=CHAR |
-	{BitString} value=BIT_STRING_LITERAL |
-	{Others} value='others' |
-	{Open}  value='open' |
-	'(' Expression ')'
-;
+//
+//SignUnaryExpression returns Expression:
+//  sign = Sign expression = UnaryExpression
+//;
+//
+//SignPrimary returns Expression:
+//  sign = Sign expression = Primary	
+//;
 
 Variable:
-	Signal |
-	Var |
-	Constant |
-	Port |
-	LoopVariable |
-	Generic |
-	Alias
+	Signal
 ;
 
-IdList:
-	id+=[Variable] (',' id+=[Variable])*
+Primary returns Expression:
+	Atomic
+	(attr=AttributeName)?
 ;
 
-//Aggregate:
-//	'(' exp+=Association (',' exp+=Association)* ')'
+Atomic returns Expression:
+	{Variable} value=[Variable] |
+	{Char} value=CharacterName |
+	{Value} value=ValueExpression | 
+	Aggregate
+;
+//	NameExpression
+////    AllocatorExpression
+////  | NameExpression
+////  | NullExpression
+////  | BitStringName
+//  | CharacterName
+//  | ValueExpression
+//  | Aggregate
+//;
+
+/*
+ * value_expression [ after time_expression ]
+ */
+Waveform returns Expression: 
+  Expression ( {WaveformExpression.expression=current} 'after' after = Expression )?
+;
+
+ValueExpression: 
+    {UnitValueExpression} value = ABSTRACT_LITERAL unit = Name
+  | {ValueExpression} value = ABSTRACT_LITERAL
+;
+
+MultiName:
+    Name ({NameList.name += current} (',' name += Name )+ )?
+;
+
+Name returns Name:
+  NamePrefix ( {NameExpression.element+=current} (element += NameSuffix)+ ) ?
+;
+
+NameExpression returns Expression:
+    {NameExpression} element += NamePrefix (element += NameSuffix)+
+  | NamePrefixExpression
+;
+
+NamePrefix returns Name:
+    {Variable} var=[Signal]
+  | StringName
+  | All
+  | Others
+;
+
+NamePrefixExpression returns Expression:
+    IdentifierName
+  | StringName
+  | All
+  | Others
+;
+
+/* 
+ * prefixed operator:
+ *   SelectedName: prefix = Prefix '.' suffix = Suffix
+ *   AttributeName: prefix = Prefix (signature = Signature )? '\'' AttributeDesignator ( '(' expression = Expression ')' )?	
+ *   IndexedName: prefix = Prefix '(' index += Expression ( ',' index += Expression )* ')'
+ *   SliceName: prefix = Prefix '(' range = DiscreteRange ')'
+ *   TypeQualificationName: prefix = Prefix ''' '(' expression = Expression ') 
+ */
+NameSuffix returns Name:
+    SelectedName
+  | AttributeName
+//  | Aggregate
+  | SliceName
+//  | TypeQualification
+;
+
+/*
+ * aggregate = "(" element_association { "," element_association } ")".
+ *
+ * Associations with elements' simple names are allowed in record aggregates only.
+ * Associations with simple expressions or discrete ranges as choices are allowed only in array aggregates.
+ * Each element of the value defined by an aggregate must be represented once and only once in the aggregate.
+ * Aggregates containing the single element association must always be specified 
+ * using named association in order to distinguish them from parenthesized expressions.
+ * The others choice can be only the last in an aggregate.
+ */
+Aggregate:
+  '(' (e += Parameter ( ',' e += Parameter )*) ? ')'
+;
+
+Parameter:
+	('others' '=>' )? exp=Expression
+	//Expression
+;
+
+//Choices returns Expression:
+//    Choice ({MultiExpression.expression += current} ('|' expression += Choice)+)?
 //;
 //
-//Association:
-//	(formal=Expression '=>')? actual=Expression
+//Choice returns Expression: 
+//    Others
+//  | Expression ({RangeExpression.left=current} direction = RangeDirection right = SimpleExpression)?
+////  | SubtypeIndicationExpression
 //;
 
-enum BuiltinFuncs returns EString:
-	  TO_UNSIGNED='to_unsigned'
-	| RISING_EDGE='rising_edge'
-	| FALLING_EDGE='falling_edge'
+SliceName returns Name:
+	'(' Range ')'
+;
+
+StringName:
+	value = STRING
+;
+
+CharacterName:
+	value = CHAR
+;
+
+MultiIdentifierName:
+	id+=ID (',' id+=ID)*
+;
+
+IdentifierName:
+	value = Identifier
+;
+
+SelectedName returns Name:
+  '.' (
+      IdentifierName
+    | CharacterName
+    | StringName
+    | All
+  )
+;
+
+All:
+  'all'
+;
+
+Others:
+  'others'
+;
+
+Unaffected:
+  'unaffected'
+;
+
+AttributeName:
+  {AttributeExpression} (signature = Signature )? value = ATTRIBUTE
+;
+
+Signature returns Signature:
+  {Signature}
+    '[' ( parameter += Name ( ',' parameter += Name )* )? ( 'return' return = Name )? ']'
 ;
 
 enum SignalKind :
@@ -648,7 +645,6 @@ enum RelationalOperator :
   | LE          = '<='
   | GREATERTHAN = '>'
   | GE          = '>='
-  | ASSOCIATE   = '=>'
 ;
 
 enum LogicalOperator :
@@ -717,11 +713,6 @@ QualifiedNameWithWildcard:
 QualifiedName:
 	ID ('.' ID)*
 ; 
-
-ValueExpression: 
-    {UnitValueExpression} value = ABSTRACT_LITERAL unit = ID
-  | {ValueExpression} value = ABSTRACT_LITERAL
-;
 
 terminal ABSTRACT_LITERAL: 
   INTEGER_FRAGMENT (

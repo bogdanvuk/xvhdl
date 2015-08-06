@@ -62,19 +62,13 @@ Workflow {
     
     		// a custom ResourceFactory for use with EMF
     		fragment = resourceFactory.ResourceFactoryFragment auto-inject {}
-    
-    		// The antlr parser generator fragment.
-    		fragment = org.eclipse.xtext.generator.parser.antlr.ex.rt.AntlrGeneratorFragment auto-inject{ 
-				options = { 
-					ignoreCase = true
-				}
-			}
+   
     		
-//    		fragment = parser.antlr.XtextAntlrGeneratorFragment auto-inject {
-//    		//  options = {
-//    		//      backtrack = true
-//    		//  }
-//    		}
+    		fragment = parser.antlr.XtextAntlrGeneratorFragment auto-inject {
+    		//  options = {
+    		//      backtrack = true
+    		//  }
+    		}
     
     		// Xtend-based API for validation
     		fragment = validation.ValidatorFragment auto-inject {

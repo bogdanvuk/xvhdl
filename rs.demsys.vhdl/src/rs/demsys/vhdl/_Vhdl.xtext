@@ -40,7 +40,7 @@ LibraryUnit
 PrimaryUnit:
 	Entity
 	;
-	
+
 Entity
   : "entity" name=ID "is" 
   	//(port_clause=port_clause)?
