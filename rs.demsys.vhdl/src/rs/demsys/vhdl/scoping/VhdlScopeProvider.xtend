@@ -7,19 +7,23 @@ import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.Scopes
-import rs.demsys.vhdl.vhdl.Port
+//import rs.demsys.vhdl.vhdl.Port
 import rs.demsys.vhdl.vhdl.Signal
 import java.util.ArrayList
-import rs.demsys.vhdl.vhdl.Architecture
-import org.eclipse.xtext.scoping.impl.MultimapBasedScope
-import rs.demsys.vhdl.vhdl.LoopStatement
-
 //import rs.demsys.vhdl.vhdl.Architecture
-//import java.util.ArrayList
-//import rs.demsys.vhdl.vhdl.SignalPort
-//import org.eclipse.xtext.scoping.Scopes
-//import rs.demsys.vhdl.vhdl.Signal
+import org.eclipse.xtext.scoping.impl.MultimapBasedScope
+import org.eclipse.xtext.scoping.IScope
+import rs.demsys.vhdl.vhdl.MemberExpression
+import rs.demsys.vhdl.vhdl.Value
+import rs.demsys.vhdl.vhdl.Variable
+
 //import rs.demsys.vhdl.vhdl.LoopStatement
+
+import rs.demsys.vhdl.vhdl.Architecture
+import java.util.ArrayList
+import org.eclipse.xtext.scoping.Scopes
+import rs.demsys.vhdl.vhdl.Signal
+import rs.demsys.vhdl.vhdl.LoopStatement
 
 /**
  * This class contains custom scoping description.
@@ -28,10 +32,112 @@ import rs.demsys.vhdl.vhdl.LoopStatement
  * on how and when to use it.
  *
  */
-class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider {
+ 
+import static extension org.eclipse.xtext.EcoreUtil2.*
+import rs.demsys.vhdl.vhdl.SignalDeclaration
+import rs.demsys.vhdl.vhdl.TypeDeclaration
+import rs.demsys.vhdl.vhdl.RecordTypeDefinition
+import rs.demsys.vhdl.vhdl.CustomSubtype
+import rs.demsys.vhdl.vhdl.Port
+import rs.demsys.vhdl.vhdl.SliceExpression
+import rs.demsys.vhdl.vhdl.Expression
+import rs.demsys.vhdl.vhdl.SubtypeIndication
+import rs.demsys.vhdl.vhdl.ConstrainedArrayTypeDefinition
+import rs.demsys.vhdl.vhdl.ProcessStatement
 
+class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider {
+	
+	var here1 = 0;
+	var here2 = 0;
+	var here3 = 0;
+	var here4 = 0;
+	var here5 = 0;
+	var here6 = 0;
+	var here7 = 0;
+	
+	def dispatch SubtypeIndication getReceiverType(Variable e) {
+		here1 += 1;
+		System.out.println("Here1: " + here1.toString());
+		var varType = (
+		switch (e.value) {
+				Signal: e.value.getContainerOfType(SignalDeclaration).type
+				Port: (e.value as Port).type
+			}
+		)
+		return varType
+	}
+	
+	def dispatch SubtypeIndication getReceiverType(SliceExpression e) {
+		here2 += 1;
+		System.out.println("Here2: " + here2.toString());
+		return getReceiverType(e.left)
+	}
+	
+	def dispatch SubtypeIndication getReceiverType(MemberExpression e) {
+		here3 += 1;
+		System.out.println("Here3: " + here3.toString());
+		return getReceiverType(e.receiver)
+	}
+//		if (e instanceof Variable) {
+//			var rcv  = e as Variable
+//			var varType = (
+//			switch (rcv.value) {
+//					Signal: rcv.value.getContainerOfType(SignalDeclaration).type
+//					Port: (rcv.value as Port).type
+//				}
+//			)
+//			return varType
+//		} else if (e instanceof SliceExpression) {
+//			var slice = e as SliceExpression
+//			return getReceiverType(slice.left)
+//		} else if (e instanceof MemberExpression) {
+//			var member = e as MemberExpression
+//			return getReceiverType(member.receiver)
+//		} else {
+//			return null
+//		}
+//	}
+
+//	def dispatch RecordTypeDefinition getRecordDefinition(CustomSubtype subtype)
+//	{
+//		
+//	}
+//	
+//	def dispatch RecordTypeDefinition getRecordDefinition(SubtypeIndication subtype)
+//	{
+//		
+//	}
+	
+	def scope_RecordField(MemberExpression member, EReference r)
+	{
+		here4 += 1;
+		System.out.println("Here4: " + here4.toString());
+		var varType = getReceiverType(member.receiver)
+		
+		if (varType instanceof CustomSubtype)	{
+			var typeDec = varType.type as TypeDeclaration
+			
+			if (typeDec.definition instanceof ConstrainedArrayTypeDefinition) {
+				var arraySubtype = (typeDec.definition as ConstrainedArrayTypeDefinition).type
+				
+				if (arraySubtype instanceof CustomSubtype) {
+					typeDec = arraySubtype.type as TypeDeclaration 
+				}
+			}
+			
+			if (typeDec.definition instanceof RecordTypeDefinition) {
+				return Scopes::scopeFor((typeDec.definition as RecordTypeDefinition).field)	
+			}
+		}
+	
+		return IScope::NULLSCOPE
+		
+	}
+	
 	def scope_Variable(Architecture arch, EReference r)
     {
+    	here5 += 1;
+		System.out.println("Here5: " + here5.toString());
     	//val arch = EcoreUtil2.getContainerOfType(context, typeof(Architecture))
     	
         //DesignFile d = EcoreUtil2.getContainerOfType(context, DesignFile.class);
@@ -46,7 +152,7 @@ class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarati
         	objScope.addAll(arch.entity.generics.declaration)
        	}
         
-        MultimapBasedScope.createScope(Scopes::scopeFor(objScope), delegateGetScope(arch, r).getAllElements(), false)
+        MultimapBasedScope.createScope(Scopes::scopeFor(objScope), delegateGetScope(arch, r).getAllElements(), true)
        
 //        return Scopes.scopeFor(objScope, delegateGetScope(arch, r));
         //return Scopes.scopeFor(objScope);
@@ -65,9 +171,18 @@ class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarati
         return MultimapBasedScope.createScope(outerAttrs, delegateGetScope(context, r).getAllElements(), false);
         */
     }
+    
+    def scope_Variable(ProcessStatement proc, EReference r)
+    {
+    	here6 += 1;
+		System.out.println("Here6: " + here6.toString());
+    	MultimapBasedScope.createScope(this.getScope(proc.eContainer, r), delegateGetScope(proc,r).getAllElements(), true)
+    }
 //    
     def scope_Variable(LoopStatement loop, EReference r)
     {
+    	here7 += 1;
+		System.out.println("Here7: " + here7.toString());
     	val objScope = new ArrayList<EObject>();
        
         objScope.addAll(loop.getVar())

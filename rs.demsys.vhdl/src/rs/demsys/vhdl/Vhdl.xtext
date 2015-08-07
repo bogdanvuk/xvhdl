@@ -149,7 +149,7 @@ BlockDeclarativeItem:
 
 Alias:
   'alias' name = ID ( ':' alias = SubtypeIndication )? 'is'
-    is = SliceExpression ';'
+    is = MemberExpression ';'
 ;
 
 SignalDeclaration:
@@ -240,10 +240,25 @@ ProcessStatement:
     'process'
       ( '(' sensitivity = IdList ')' )? 
       ( 'is' )?
-//      ( declaration += ProcessDeclarativeItem )*
+      ( declaration += ProcessDeclarativeItem )*
     'begin'
       ( statement += SequentialStatement )* 
     'end' ( 'postponed' )? 'process' ( Identifier )? ';'
+;
+
+ProcessDeclarativeItem:
+//    SubprogramDeclaration
+   TypeDeclaration
+  | SubtypeDeclaration
+  | ConstantDeclaration
+  | VariableDeclaration
+//  | FileDeclaration
+  | Alias
+  | AttributeDeclaration
+  | AttributeSpecification
+//  | UseClauseDeclaration
+//  | GroupTemplateDeclaration
+//  | GroupDeclaration
 ;
 
 /*
@@ -297,7 +312,7 @@ GenericMapAssociation:
  */
 ConditionalSignalAssignmentStatement:
   ( label = ID ':' )? ( postponed ?= 'postponed' )?
-   target = SliceExpression '<=' ( guarded ?= 'guarded' )? //( delay = DelayMechanism )? 
+   target = MemberExpression '<=' ( guarded ?= 'guarded' )? //( delay = DelayMechanism )? 
    waveform += ConditionalWaveform (=> 'else' waveform += ConditionalWaveform)* ';'
 ;
 
@@ -457,10 +472,17 @@ LoopStatement
  */
 SequentialSignalAssignmentStatement :
   ( label = ID ':' )? ( postponed ?= 'postponed' )?
-  target = SliceExpression '<=' ( guarded ?= 'guarded' )?// ( delay = DelayMechanism )? 
+  target = MemberExpression ('<=' | ':=') ( guarded ?= 'guarded' )?// ( delay = DelayMechanism )? 
    waveform = Waveforms 
    ';'
 ;
+
+///*
+// * [ label: ] target := expression ;
+// */
+//VariableAssignmentStatement:
+//   ( label = ID ':' )? target = MemberExpression => ':=' initial = Expression ';'
+//;
 
 IterationScheme:
     WhileIterationScheme
@@ -494,11 +516,17 @@ DiscreteRange returns Expression:
 //;
 
 SubtypeIndication
-  : (custom_type=[Type|QualifiedName]
-  	| builtin_type=BuiltinTypes)
-  	
-  	(constraint=Constraint)?
-  ;
+  : CustomSubtype |
+  	BuiltinSubtype
+;
+  
+CustomSubtype:
+	type=[Type|QualifiedName] (constraint=Constraint)?
+;
+
+BuiltinSubtype:
+	type=BuiltinTypes (constraint=Constraint)?
+;
  
 Type:
 	SubtypeDeclaration
@@ -510,12 +538,14 @@ SubtypeDeclaration:
 ;
 
 TypeDeclaration:
-    'type' name = ID ( 'is' is = TypeDefinition )? ';'
+    'type' name = ID ( 'is' definition = TypeDefinition )? ';'
 ;
 
 TypeDefinition:
     EnumerationTypeDefinition
-  | CompositeTypeDefinition
+//  | UnconstrainedArrayTypeDefinition
+  | ConstrainedArrayTypeDefinition
+  | RecordTypeDefinition
   | AccessTypeDefinition
   | FileTypeDefinition
 //  | PhysicalTypeDefinition
@@ -526,29 +556,23 @@ AccessTypeDefinition:
   'access' type = SubtypeIndication
 ;
 
-CompositeTypeDefinition:
-    ArrayTypeDefinition
-  | RecordTypeDefinition
-;
-
-ArrayTypeDefinition:
-    UnconstrainedArrayTypeDefinition
-  | ConstrainedArrayTypeDefinition
-;
-
-UnconstrainedArrayTypeDefinition:
-    'array' '(' 
-        index += ID 'range' '<>' ( ',' index += ID 'range' '<>' )* 
-    ')' 'of' type = SubtypeIndication
-;
+//UnconstrainedArrayTypeDefinition:
+//    'array' '(' 
+//        index += ID 'range' '<>' ( ',' index += ID 'range' '<>' )* 
+//    ')' 'of' type = SubtypeIndication
+//;
 
 ConstrainedArrayTypeDefinition:
     'array' constraint = IndexConstraint 'of' type = SubtypeIndication
 ;
 
+EnumerationLiteral:
+	name = (ID | CHAR)
+;
+
 EnumerationTypeDefinition:
-    '(' literal += (ID | CHAR) 
-    ( ',' literal += (ID | CHAR) )* ')'
+    '(' literal += EnumerationLiteral 
+    ( ',' literal += EnumerationLiteral )* ')'
 ;
 
 FileTypeDefinition:
@@ -644,13 +668,8 @@ AttributeExpression returns Expression:
 ;
 
 MemberExpression returns Expression: 
-    SliceExpression ({MemberExpression.left=current} '.' right = Member)*
-;
-
-Member returns Expression:
-	{Member}
-	member=[RecordField]
-	(('(' slice+=Expression (',' slice+=Expression)* ')')+)?
+    SliceExpression ({MemberExpression.receiver=current} '.' member=[RecordField]
+	(('(' slice+=Expression (',' slice+=Expression)* ')')+)?)*
 ;
 
 SliceExpression returns Expression:
@@ -679,7 +698,8 @@ Variable:
 	Port |
 	LoopVariable |
 	Generic |
-	Alias
+	Alias |
+	EnumerationLiteral
 ;
 
 IdList:
@@ -808,8 +828,8 @@ Identifier:
   | EXTENDED_IDENTIFIER
 ;
 
-QualifiedNameWithWildcard:
-    QualifiedName '.all'?
+QualifiedNameWithWildcard hidden():
+    QualifiedName ('.' 'all')?
 ;
 
 QualifiedName:
