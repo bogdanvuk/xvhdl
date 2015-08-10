@@ -4,7 +4,9 @@
 package rs.demsys.vhdl;
 
 import rs.demsys.vhdl.scoping.VhdlImportedNamespaceAwareLocalScopeProvider;
+import rs.demsys.vhdl.scoping.VhdlQualifiedNameProvider;
 
+import org.eclipse.xtext.naming.IQualifiedNameProvider;
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider;
 
 /**
@@ -18,5 +20,10 @@ public class VhdlRuntimeModule extends rs.demsys.vhdl.AbstractVhdlRuntimeModule 
                         com.google.inject.name.Names
                                 .named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
                 .to(VhdlImportedNamespaceAwareLocalScopeProvider.class);
+    }
+	
+	@Override
+    public Class<? extends IQualifiedNameProvider> bindIQualifiedNameProvider() {
+        return VhdlQualifiedNameProvider.class;
     }
 }

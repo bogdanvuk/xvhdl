@@ -44,6 +44,10 @@ import rs.demsys.vhdl.vhdl.Expression
 import rs.demsys.vhdl.vhdl.SubtypeIndication
 import rs.demsys.vhdl.vhdl.ConstrainedArrayTypeDefinition
 import rs.demsys.vhdl.vhdl.ProcessStatement
+import java.util.List
+import rs.demsys.vhdl.vhdl.Generic
+import org.eclipse.xtext.scoping.impl.SimpleScope
+import rs.demsys.vhdl.vhdl.EnumerationLiteral
 
 class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider {
 	
@@ -142,17 +146,30 @@ class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarati
     	
         //DesignFile d = EcoreUtil2.getContainerOfType(context, DesignFile.class);
         
-        val objScope = new ArrayList<EObject>();
+//        val objScope = new ArrayList<EObject>();
+//		val enums = EcoreUtil2.getAllContentsOfType(arch, typeof(EnumerationLiteral))
+		
+//	      objScope.addAll(EcoreUtil2.getAllContentsOfType(arch.entity.ports, Port.class))
+		Scopes::scopeFor(
+			EcoreUtil2.getAllContentsOfType(arch, typeof(EnumerationLiteral)),
+			Scopes::scopeFor(
+				EcoreUtil2.getAllContentsOfType(arch.entity.generics, typeof(Generic)),
+				Scopes::scopeFor(
+					EcoreUtil2.getAllContentsOfType(arch.entity.ports, typeof(Port)),
+					delegateGetScope(arch, r)
+				)
+			)
+		)
         
-        if (arch.entity.ports != null) {
-            objScope.addAll(arch.entity.ports.declaration)
-        }
-        
-        if (arch.entity.generics != null) {
-        	objScope.addAll(arch.entity.generics.declaration)
-       	}
-        
-        MultimapBasedScope.createScope(Scopes::scopeFor(objScope), delegateGetScope(arch, r).getAllElements(), true)
+//        if (arch.entity.ports != null) {
+//            objScope.addAll(arch.entity.ports.declaration)
+//        }
+//        
+//        if (arch.entity.generics != null) {
+//        	objScope.addAll(arch.entity.generics.declaration)
+//       	}
+//        
+//        MultimapBasedScope.createScope(Scopes::scopeFor(objScope), delegateGetScope(arch, r).getAllElements(), true)
        
 //        return Scopes.scopeFor(objScope, delegateGetScope(arch, r));
         //return Scopes.scopeFor(objScope);
@@ -176,7 +193,11 @@ class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarati
     {
     	here6 += 1;
 		System.out.println("Here6: " + here6.toString());
-    	MultimapBasedScope.createScope(this.getScope(proc.eContainer, r), delegateGetScope(proc,r).getAllElements(), true)
+//    	MultimapBasedScope.createScope(this.getScope(proc.eContainer, r), delegateGetScope(proc,r).getAllElements(), true)
+		new SimpleScope(
+			delegateGetScope(proc,r),
+			this.getScope(proc.eContainer, r).getAllElements()
+		)
     }
 //    
     def scope_Variable(LoopStatement loop, EReference r)

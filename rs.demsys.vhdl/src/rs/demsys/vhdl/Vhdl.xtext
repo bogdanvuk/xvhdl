@@ -11,22 +11,23 @@ DesignFile :
 
 UseClause
   : //'use' importedNamespace+=VhdlName ( ',' importedNamespace+=VhdlName )* ';'
-  'use' (lib=Library) '.' importedNamespace = QualifiedNameWithWildcard ';'
+  'use' importedNamespace = QualifiedNameWithWildcard ';'
+//  'use' (lib=Library) '.' importedNamespace = QualifiedNameWithWildcard ';'
   ;
-
-Library:
-	custom_lib=[LibraryClause]
-	| builtin_lib=BuiltinLibs
-;
-
+//
+//Library:
+//	custom_lib=[LibraryClause]
+//	| builtin_lib=BuiltinLibs
+//;
+//
 LibraryClause
   : /* 'library' library_names+=IDENTIFIER (',' library_names+=IDENTIFIER)* ';' */
   	'library' name=ID ';'
   ;
-  
-enum BuiltinLibs:
-	WORK='work'
-;
+//  
+//enum BuiltinLibs:
+//	WORK='work'
+//;
 
 ContextItem
   : LibraryClause
@@ -41,7 +42,7 @@ LibraryUnit:
 
 
 Package
-  : "package" name=	QualifiedName "is"
+  : "package" name = ID "is"
     //package_declarative_part=package_declarative_part
     (package_declarative_item+=package_declarative_item )*
     "end" ( "package" )? ID? ";"
@@ -74,7 +75,7 @@ package_declarative_part
  * end architecture identifier ;  
  */
 Architecture returns Architecture:
-  'architecture' name = ID 'of' entity=[Entity] 'is'
+  'architecture' name = ID 'of' entity=[Entity|QualifiedName] 'is'
     ( declaration += BlockDeclarativeItem )*
   'begin'
     ( statement += ArchitectureStatement )*
@@ -276,7 +277,8 @@ ComponentInstantiationStatement:
 ;
 
 EntityInstantiationStatement:
-  label = ID ':' 'entity' (lib=Library '.')? name = QualifiedName ('(' ID ')')? 
+//  label = ID ':' 'entity' (lib=Library '.')? name = QualifiedName ('(' ID ')')? 
+  name=ID ':' 'entity' entity = [Entity|QualifiedName] ('(' ID ')')?
   ( genericMap = GenericMap )? 
   ( portMap = PortMap )? ';'
 ;
@@ -601,6 +603,7 @@ enum BuiltinTypes returns EString:
     | NATURAL="natural"
     | UNSIGNED="unsigned"
     | STRING = "string"
+    | CONV_STD_LOGIC_VECTOR="conv_std_logic_vector"
 ;
 
 Constraint returns Expression:
@@ -625,19 +628,19 @@ LogicalExpression returns Expression:
 ;
 
 Relation returns Expression:
-  ChoiceExpression ({RelationalExpression.left=current} operator = RelationalOperator right = ChoiceExpression)?
+  ChoiceExpression ({RelationalExpression.left=current} operator = RelationalOperator right = ChoiceExpression)*
 ;
 
 ChoiceExpression returns Expression:
-	RangeExpression ({ChoiceExpression.left=current} '|' right = RangeExpression)?
+	RangeExpression ({ChoiceExpression.left=current} '|' right = RangeExpression)*
 ;
 
 RangeExpression returns Expression:
-	ShiftExpression ({RangeExpression.left=current} operator = RangeDirection right = ShiftExpression)?
+	ShiftExpression ({RangeExpression.left=current} operator = RangeDirection right = ShiftExpression)*
 ;
 
 ShiftExpression returns Expression: 
-  SimpleExpression ({ShiftExpression.left=current} operator=ShiftOperator right=SimpleExpression)?
+  SimpleExpression ({ShiftExpression.left=current} operator=ShiftOperator right=SimpleExpression)*
 ;
 SimpleExpression returns Expression: 
     TermExpression ({AddingExpression.left=current} operator = AddingOperator right = TermExpression)*
@@ -674,7 +677,7 @@ MemberExpression returns Expression:
 
 SliceExpression returns Expression:
 	AtomicExpression
-	({SliceExpression.left=current} ('(' slice+=Expression (',' slice+=Expression)* ')')+)?
+	({SliceExpression.left=current} ('(' slice+=Expression (',' slice+=Expression)* ')')+)*
 ;
 
 AtomicExpression returns Expression:

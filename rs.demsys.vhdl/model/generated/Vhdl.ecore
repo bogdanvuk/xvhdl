@@ -8,19 +8,10 @@
         eType="#//LibraryUnit" containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="UseClause" eSuperTypes="#//ContextItem">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="lib" eType="#//Library"
-        containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="importedNamespace" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="Library">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="custom_lib" eType="#//LibraryClause"/>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="builtin_lib" eType="#//BuiltinLibs"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="LibraryClause" eSuperTypes="#//ContextItem">
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-  </eClassifiers>
-  <eClassifiers xsi:type="ecore:EEnum" name="BuiltinLibs">
-    <eLiterals name="WORK" literal="work"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ContextItem"/>
   <eClassifiers xsi:type="ecore:EClass" name="LibraryUnit">
@@ -125,10 +116,9 @@
     <eStructuralFeatures xsi:type="ecore:EReference" name="port" eType="#//Ports"
         containment="true"/>
   </eClassifiers>
-  <eClassifiers xsi:type="ecore:EClass" name="ArchitectureStatement">
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="label" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
-  </eClassifiers>
+  <eClassifiers xsi:type="ecore:EClass" name="ArchitectureStatement"/>
   <eClassifiers xsi:type="ecore:EClass" name="ProcessStatement" eSuperTypes="#//ArchitectureStatement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="label" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="postponed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="sensitivity" eType="#//IdList"
         containment="true"/>
@@ -139,6 +129,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ProcessDeclarativeItem"/>
   <eClassifiers xsi:type="ecore:EClass" name="ComponentInstantiationStatement" eSuperTypes="#//ArchitectureStatement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="label" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="genericMap" eType="#//GenericMap"
         containment="true"/>
@@ -146,9 +137,8 @@
         containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="EntityInstantiationStatement" eSuperTypes="#//ArchitectureStatement">
-    <eStructuralFeatures xsi:type="ecore:EReference" name="lib" eType="#//Library"
-        containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="name" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="entity" eType="#//Entity"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="genericMap" eType="#//GenericMap"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="portMap" eType="#//PortMap"
@@ -174,6 +164,7 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ConditionalSignalAssignmentStatement"
       eSuperTypes="#//ArchitectureStatement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="label" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="postponed" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EBoolean"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="target" eType="#//Expression"
         containment="true"/>
@@ -195,6 +186,7 @@
         upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="ForGenerateStatement" eSuperTypes="#//ArchitectureStatement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="label" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="var" eType="#//LoopVariable"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="range" eType="#//Expression"
@@ -205,6 +197,7 @@
         eType="#//ArchitectureStatement" containment="true"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="IfGenerateStatement" eSuperTypes="#//ArchitectureStatement">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="label" eType="ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="condition" eType="#//Expression"
         containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="declaration" upperBound="-1"
@@ -335,9 +328,10 @@
     <eLiterals name="NATURAL" value="3" literal="natural"/>
     <eLiterals name="UNSIGNED" value="4" literal="unsigned"/>
     <eLiterals name="STRING" value="5" literal="string"/>
-    <eLiterals name="TO_UNSIGNED" value="6" literal="to_unsigned"/>
-    <eLiterals name="RISING_EDGE" value="7" literal="rising_edge"/>
-    <eLiterals name="FALLING_EDGE" value="8" literal="falling_edge"/>
+    <eLiterals name="CONV_STD_LOGIC_VECTOR" value="6" literal="conv_std_logic_vector"/>
+    <eLiterals name="TO_UNSIGNED" value="7" literal="to_unsigned"/>
+    <eLiterals name="RISING_EDGE" value="8" literal="rising_edge"/>
+    <eLiterals name="FALLING_EDGE" value="9" literal="falling_edge"/>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Variable" eSuperTypes="#//Expression">
     <eStructuralFeatures xsi:type="ecore:EReference" name="value" eType="#//Variable"/>
