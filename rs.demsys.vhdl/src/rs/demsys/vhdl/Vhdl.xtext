@@ -45,12 +45,13 @@ Package
   : "package" name = ID "is"
     //package_declarative_part=package_declarative_part
     (package_declarative_item+=package_declarative_item )*
-    "end" ( "package" )? ID? ";"
+    "end" ( "package" )? (ID)? ";"
   ;
 
 package_declarative_item
   : 
 	SignalDeclaration
+  | AttributeDeclaration
 //    SubprogramDeclaration
   | Type
 //  | SubtypeDeclaration
@@ -135,7 +136,7 @@ BlockDeclarativeItem:
   | Alias
   | Component
   | AttributeDeclaration
-  | AttributeSpecification
+//  | AttributeSpecification
 //  | ConfigurationSpecification
 //  | DisconnectionSpecification
 //  | LimitDeclaration
@@ -185,17 +186,20 @@ Constant:
  * attribute identifier : type_mark ;
  */
 AttributeDeclaration:
-  'attribute' name = ID ':'  (type_id = ID | type_keyword = BuiltinTypes) ';'
+  'attribute' name = ID (
+	  	  (=> 'of' entity=ID ':' class = EntityClass 'is' is=Expression ';')
+	  	| (':'  (type_id = ID | type_keyword = BuiltinTypes) ';')
+  	)
 ;
 
 /*
  * attribute_specification = "attribute" attribute_designator "of" entity_specification "is" expression ";"
  *  entity_specification = entity_name_list ":" entity_class
  */
-AttributeSpecification :
-  'attribute' name = ID 'of' entity=ID ':' class = EntityClass 'is' is=Expression ';' 
-  //entity = [Entity] ':' class = EntityClass 'is' is = Expression ';'
-;
+//AttributeSpecification :
+//  'attribute' name = ID 'of' entity=ID ':' class = EntityClass 'is' is=Expression ';' 
+//  //entity = [Entity] ':' class = EntityClass 'is' is = Expression ';'
+//;
 
 /*
  * component component_name is
@@ -256,7 +260,7 @@ ProcessDeclarativeItem:
 //  | FileDeclaration
   | Alias
   | AttributeDeclaration
-  | AttributeSpecification
+//  | AttributeSpecification
 //  | UseClauseDeclaration
 //  | GroupTemplateDeclaration
 //  | GroupDeclaration
@@ -271,7 +275,7 @@ ProcessDeclarativeItem:
  *            port map ( actual arguments ) ;
  */
 ComponentInstantiationStatement:
-  label = ID ':' ( 'component' )? name = ID 
+  name = ID ':' ( 'component' )? component=[Component|QualifiedName]
   ( genericMap = GenericMap )? 
   ( portMap = PortMap )? ';'
 ;
@@ -291,7 +295,11 @@ PortMap:
 ;
 
 PortMapAssociation:
-	formal=ID '=>' actual=Expression
+	formal=PortMapAssociationFormal '=>' actual=Expression
+;
+
+PortMapAssociationFormal:
+	exp=SliceExpression
 ;
 
 
@@ -545,7 +553,7 @@ TypeDeclaration:
 
 TypeDefinition:
     EnumerationTypeDefinition
-//  | UnconstrainedArrayTypeDefinition
+  | UnconstrainedArrayTypeDefinition
   | ConstrainedArrayTypeDefinition
   | RecordTypeDefinition
   | AccessTypeDefinition
@@ -558,11 +566,11 @@ AccessTypeDefinition:
   'access' type = SubtypeIndication
 ;
 
-//UnconstrainedArrayTypeDefinition:
-//    'array' '(' 
-//        index += ID 'range' '<>' ( ',' index += ID 'range' '<>' )* 
-//    ')' 'of' type = SubtypeIndication
-//;
+UnconstrainedArrayTypeDefinition:
+    'array' '(' 
+        index += ID 'range' '<>' ( ',' index += ID 'range' '<>' )* 
+    ')' 'of' type = SubtypeIndication
+;
 
 ConstrainedArrayTypeDefinition:
     'array' constraint = IndexConstraint 'of' type = SubtypeIndication
@@ -598,11 +606,20 @@ RecordTypeDefinition:
 
 enum BuiltinTypes returns EString:
     STD_LOGIC="std_logic"
+    | STD_ULOGIC="std_ulogic"
+    | STD_ULOGIC_VECTOR="std_ulogic_vector"
     | STD_LOGIC_VECTOR="std_logic_vector"
+    | BIT="bit"
+    | REAL="real"
+    | BIT_VECTOR="bit_vector"
     | INTEGER="integer"
+    | POSITIVE="positive"
+    | NEGATIVE="negative"
+    | BOOLEAN="boolean"
     | NATURAL="natural"
     | UNSIGNED="unsigned"
     | STRING = "string"
+    | TO_X01 = "TO_X01"
     | CONV_STD_LOGIC_VECTOR="conv_std_logic_vector"
 ;
 
@@ -672,16 +689,25 @@ AttributeExpression returns Expression:
 
 MemberExpression returns Expression: 
     SliceExpression ({MemberExpression.receiver=current} '.' member=[RecordField]
-	(('(' slice+=Expression (',' slice+=Expression)* ')')+)?)*
+	('(' slice+=Expression (',' slice+=Expression)* ')')* )*
 ;
 
 SliceExpression returns Expression:
 	AtomicExpression
-	({SliceExpression.left=current} ('(' slice+=Expression (',' slice+=Expression)* ')')+)*
+	({SliceExpression.left=current} ('(' slice+=Expression (',' slice+=Expression)* ')')+)?
+;
+
+Parameter:
+	Expression
+	({Parameter.left=current} '=>' target=Expression)?
+;
+
+Aggregate returns Expression:
+	'(' param+=Parameter (',' param+=Parameter)* ')'
 ;
 
 AtomicExpression returns Expression:
-	{Variable} value=[Variable] |
+	{VariableRef} value=[Variable] |
 	{Value} value=ValueExpression |
 	{Type} value=BuiltinTypes |
 	{BuiltinFuncs} value=BuiltinFuncs |
@@ -691,7 +717,8 @@ AtomicExpression returns Expression:
 	{BitString} value=BIT_STRING_LITERAL |
 	{Others} value='others' |
 	{Open}  value='open' |
-	'(' Expression ')'
+	Aggregate
+//	'(' Expression ')'
 ;
 
 Variable:
@@ -769,7 +796,7 @@ enum RelationalOperator :
   | LE          = '<='
   | GREATERTHAN = '>'
   | GE          = '>='
-  | ASSOCIATE   = '=>'
+//  | ASSOCIATE   = '=>'
 ;
 
 enum LogicalOperator :

@@ -4,6 +4,11 @@
 package rs.demsys.vhdl.ui;
 
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.xtext.documentation.IEObjectDocumentationProvider;
+import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider;
+
+import rs.demsys.vhdl.ui.hover.VhdlEObjectDocumentationProvider;
+import rs.demsys.vhdl.ui.hover.VhdlEObjectHoverProvider;
 
 /**
  * Use this class to register components to be used within the IDE.
@@ -12,4 +17,13 @@ public class VhdlUiModule extends rs.demsys.vhdl.ui.AbstractVhdlUiModule {
 	public VhdlUiModule(AbstractUIPlugin plugin) {
 		super(plugin);
 	}
+	
+	public Class<? extends IEObjectHoverProvider> bindIEObjectHoverProvider() {
+        return VhdlEObjectHoverProvider.class;
+    }
+ 
+    public Class<? extends IEObjectDocumentationProvider> bindIEObjectDocumentationProviderr() {
+        return VhdlEObjectDocumentationProvider.class;
+    }
+	
 }

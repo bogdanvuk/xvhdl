@@ -5,7 +5,7 @@ import org.eclipse.xtext.generator.*
 import org.eclipse.xtext.ui.generator.*
 
 var grammarURI = "classpath:/rs/demsys/vhdl/Vhdl.xtext"
-var fileExtensions = "vhd"
+var fileExtensions = "vhdl,vhd"
 var projectName = "rs.demsys.vhdl"
 var runtimeProject = "../${projectName}"
 var generateXtendStub = true
@@ -90,7 +90,7 @@ Workflow {
     
     		// scoping and exporting API
     		fragment = scoping.ImportNamespacesScopingFragment auto-inject {
-    			//generateStub = false
+    			ignoreCase = true
     		}
     		fragment = exporting.QualifiedNamesFragment auto-inject {}
     		fragment = builder.BuilderIntegrationFragment auto-inject {}
@@ -113,9 +113,18 @@ Workflow {
     
     		// content assist API
     		fragment = contentAssist.ContentAssistFragment auto-inject {}
+
+			// generates a more lightweight ANTLR parser and lexer tailored ...
+			fragment = parser.antlr.ex.ca.ContentAssistParserGeneratorFragment {
+				options = {
+					ignoreCase = true
+				}
+			}
     
     		// generates a more lightweight Antlr parser and lexer tailored for content assist
-    		fragment = parser.antlr.XtextAntlrUiGeneratorFragment auto-inject {}
+    		fragment = parser.antlr.XtextAntlrUiGeneratorFragment auto-inject {
+//    			partialParsing = true
+    		}
     
     		// generates junit test support classes into Generator#pathTestProject
     		fragment = junit.Junit4Fragment auto-inject {}

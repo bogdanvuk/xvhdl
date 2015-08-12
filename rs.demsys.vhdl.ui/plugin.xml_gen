@@ -9,7 +9,7 @@
             class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.ui.editor.XtextEditor"
             contributorClass="org.eclipse.ui.editors.text.TextEditorActionContributor"
             default="true"
-            extensions="vhd"
+            extensions="vhdl,vhd"
             id="rs.demsys.vhdl.Vhdl"
             name="Vhdl Editor">
         </editor>
@@ -213,6 +213,20 @@
 		point="org.eclipse.emf.ecore.extension_parser">
 		<parser
 			class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.resource.IResourceFactory"
+			type="vhdl">
+		</parser>
+	</extension>
+	<extension point="org.eclipse.xtext.extension_resourceServiceProvider">
+        <resourceServiceProvider
+            class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.ui.resource.IResourceUIServiceProvider"
+            uriExtension="vhdl">
+        </resourceServiceProvider>
+    </extension>
+
+	<extension
+		point="org.eclipse.emf.ecore.extension_parser">
+		<parser
+			class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.resource.IResourceFactory"
 			type="vhd">
 		</parser>
 	</extension>
@@ -251,7 +265,7 @@
          point="org.eclipse.xtext.builder.participant">
       <participant
             class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.builder.IXtextBuilderParticipant"
-            fileExtensions="vhd"
+            fileExtensions="vhdl,vhd"
             >
       </participant>
    </extension>
@@ -400,22 +414,26 @@
   <extension point="org.eclipse.compare.contentViewers">
     <viewer id="rs.demsys.vhdl.Vhdl.compare.contentViewers"
             class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.ui.compare.InjectableViewerCreator"
-            extensions="vhd">
+            extensions="vhdl,vhd">
     </viewer>
   </extension>
   <extension point="org.eclipse.compare.contentMergeViewers">
     <viewer id="rs.demsys.vhdl.Vhdl.compare.contentMergeViewers"
             class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.ui.compare.InjectableViewerCreator"
-            extensions="vhd" label="Vhdl Compare">
+            extensions="vhdl,vhd" label="Vhdl Compare">
      </viewer>
   </extension>
   <extension point="org.eclipse.ui.editors.documentProviders">
     <provider id="rs.demsys.vhdl.Vhdl.editors.documentProviders"
             class="rs.demsys.vhdl.ui.VhdlExecutableExtensionFactory:org.eclipse.xtext.ui.editor.model.XtextDocumentProvider"
-            extensions="vhd">
+            extensions="vhdl,vhd">
     </provider>
   </extension>
   <extension point="org.eclipse.team.core.fileTypes">
+    <fileTypes
+            extension="vhdl"
+            type="text">
+    </fileTypes>
     <fileTypes
             extension="vhd"
             type="text">

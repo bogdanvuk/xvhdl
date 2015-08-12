@@ -48,8 +48,20 @@ import java.util.List
 import rs.demsys.vhdl.vhdl.Generic
 import org.eclipse.xtext.scoping.impl.SimpleScope
 import rs.demsys.vhdl.vhdl.EnumerationLiteral
+import rs.demsys.vhdl.vhdl.EnumerationTypeDefinition
+import org.eclipse.xtend.lib.macro.declaration.EnumerationTypeDeclaration
+import rs.demsys.vhdl.vhdl.PortMapAssociation
+import rs.demsys.vhdl.vhdl.VariableRef
+import rs.demsys.vhdl.vhdl.PortMapAssociationFormal
+import rs.demsys.vhdl.vhdl.Entity
+import rs.demsys.vhdl.vhdl.EntityInstantiationStatement
+import java.util.HashMap
+import org.eclipse.xtext.scoping.impl.MapBasedScope
+import rs.demsys.vhdl.vhdl.ComponentInstantiationStatement
 
 class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider {
+	
+	HashMap<String, IScope> test;
 	
 	var here1 = 0;
 	var here2 = 0;
@@ -58,8 +70,14 @@ class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarati
 	var here5 = 0;
 	var here6 = 0;
 	var here7 = 0;
+	var here8 = 0;
 	
-	def dispatch SubtypeIndication getReceiverType(Variable e) {
+	new()
+	{
+		test = new HashMap<String, IScope>;
+	}
+	
+	def dispatch SubtypeIndication getReceiverType(VariableRef e) {
 		here1 += 1;
 		System.out.println("Here1: " + here1.toString());
 		var varType = (
@@ -138,28 +156,134 @@ class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarati
 		
 	}
 	
+	def scope_Variable(PortMapAssociationFormal formal, EReference r){
+		var entity_inst = EcoreUtil2::getContainerOfType(formal, typeof(EntityInstantiationStatement))
+		if (entity_inst != null) {
+			return delegateGetScope(entity_inst.entity,r)
+		} 
+		
+		var comp_inst = EcoreUtil2::getContainerOfType(formal, typeof(ComponentInstantiationStatement))
+		if (comp_inst != null) {
+			return delegateGetScope(comp_inst.component,r)
+		}
+		
+		return IScope::NULLSCOPE
+		
+	}
+	
 	def scope_Variable(Architecture arch, EReference r)
+//	def scope_VariableRef_value(Architecture arch, EReference r)
     {
     	here5 += 1;
-		System.out.println("Here5: " + here5.toString());
-    	//val arch = EcoreUtil2.getContainerOfType(context, typeof(Architecture))
-    	
-        //DesignFile d = EcoreUtil2.getContainerOfType(context, DesignFile.class);
-        
-//        val objScope = new ArrayList<EObject>();
-//		val enums = EcoreUtil2.getAllContentsOfType(arch, typeof(EnumerationLiteral))
+    	if (here5 % 100 == 0) {
+			System.out.println("Here5: " + here5.toString());
+			System.out.println(arch.entity.name + '.' + arch.name);
+		}
 		
-//	      objScope.addAll(EcoreUtil2.getAllContentsOfType(arch.entity.ports, Port.class))
-		Scopes::scopeFor(
-			EcoreUtil2.getAllContentsOfType(arch, typeof(EnumerationLiteral)),
-			Scopes::scopeFor(
-				EcoreUtil2.getAllContentsOfType(arch.entity.generics, typeof(Generic)),
-				Scopes::scopeFor(
-					EcoreUtil2.getAllContentsOfType(arch.entity.ports, typeof(Port)),
-					delegateGetScope(arch, r)
+		var scope = delegateGetScope(arch, r)
+		
+		if (arch.entity.generics != null) {
+			scope = Scopes::scopeFor(
+						arch.entity.generics.declaration, 
+						scope
+					)
+		}
+		
+		if (arch.entity.ports != null) {
+			scope = Scopes::scopeFor(
+					arch.entity.ports.declaration, 
+					scope
 				)
-			)
-		)
+		}
+		
+		return scope
+
+//    	var scope = test.get(arch.entity.name + '.' + arch.name) 
+//    	
+//    	if (scope == null) {
+//	    	scope = new SimpleScope(
+//				delegateGetScope(arch.entity,r),
+//				delegateGetScope(arch,r).getAllElements()
+//			)
+//	    
+//	    	here8 += 1;
+//			System.out.println("Here6: " + here6.toString() + " arch: " + arch.entity.name + '.' + arch.name);	
+//	    	test.put(arch.entity.name + '.' + arch.name, scope)
+//	    }
+//	    
+//    	here5 += 1;
+//    	if (here5 % 100 == 0) {
+//			System.out.println("Here5: " + here5.toString());
+//		}
+//		
+//		return scope
+		
+//    	Scopes::scopeFor(
+//			EcoreUtil2.getAllContentsOfType(arch, typeof(EnumerationLiteral)),
+//			MultimapBasedScope.createScope(
+//				delegateGetScope(arch.entity, r), 
+//				delegateGetScope(arch, r).getAllElements, 
+//				false
+//			)
+//		)
+
+//		val objScope = new ArrayList<EObject>();
+//		
+//		for (e : arch.declaration.filter(typeof(TypeDeclaration))) {
+//			if (e.definition instanceof EnumerationTypeDefinition) {
+//				objScope.addAll((e.definition as EnumerationTypeDefinition).literal)	
+//			}
+//			
+//		}
+//
+//		Scopes::scopeFor(
+//			objScope,
+//			new SimpleScope(
+//				delegateGetScope(arch.entity, r),
+//				delegateGetScope(arch, r).getAllElements
+//			)
+//		)
+
+		
+
+//		MultimapBasedScope.createScope(
+//				delegateGetScope(arch.entity, r), 
+//				delegateGetScope(arch, r).getAllElements, 
+//				false
+//			)
+//		Scopes::scopeFor(
+//			arch.entity.ports.declaration, 
+//			delegateGetScope(arch, r)
+//		)
+		
+//				Scopes::scopeFor(
+//			arch.entity.generics.declaration,
+//			Scopes::scopeFor(
+//				arch.entity.ports.declaration, 
+//				delegateGetScope(arch, r)
+//			)
+//		)
+
+//    	here5 += 1;
+//		System.out.println("Here5: " + here5.toString());
+//    	//val arch = EcoreUtil2.getContainerOfType(context, typeof(Architecture))
+//    	
+//        //DesignFile d = EcoreUtil2.getContainerOfType(context, DesignFile.class);
+//        
+////        val objScope = new ArrayList<EObject>();
+////		val enums = EcoreUtil2.getAllContentsOfType(arch, typeof(EnumerationLiteral))
+//		
+////	      objScope.addAll(EcoreUtil2.getAllContentsOfType(arch.entity.ports, Port.class))
+//		Scopes::scopeFor(
+//			EcoreUtil2.getAllContentsOfType(arch, typeof(EnumerationLiteral)),
+//			Scopes::scopeFor(
+//				EcoreUtil2.getAllContentsOfType(arch.entity.generics, typeof(Generic)),
+//				Scopes::scopeFor(
+//					EcoreUtil2.getAllContentsOfType(arch.entity.ports, typeof(Port)),
+//					delegateGetScope(arch, r)
+//				)
+//			)
+//		)
         
 //        if (arch.entity.ports != null) {
 //            objScope.addAll(arch.entity.ports.declaration)
@@ -191,13 +315,28 @@ class VhdlScopeProvider extends org.eclipse.xtext.scoping.impl.AbstractDeclarati
     
     def scope_Variable(ProcessStatement proc, EReference r)
     {
+//    	var qname = (proc.eContainer as Architecture).entity.name + '.' + (proc.eContainer as Architecture).name + proc.label
+//    	var scope = test.get(qname) 
+//    	
+//    	if (scope == null) {
+//			scope = MapBasedScope.createScope(
+//				delegateGetScope(proc,r),
+//				this.getScope(proc.eContainer, r).getAllElements()
+//			)
+//	    	test.put(qname, scope)
+//	    }
+    	
     	here6 += 1;
 		System.out.println("Here6: " + here6.toString());
 //    	MultimapBasedScope.createScope(this.getScope(proc.eContainer, r), delegateGetScope(proc,r).getAllElements(), true)
-		new SimpleScope(
-			delegateGetScope(proc,r),
-			this.getScope(proc.eContainer, r).getAllElements()
+
+		Scopes::scopeFor(
+			proc.declaration, 
+			delegateGetScope(proc.eContainer, r)
 		)
+
+//		return scope
+		
     }
 //    
     def scope_Variable(LoopStatement loop, EReference r)
